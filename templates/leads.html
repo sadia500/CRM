@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}— Leads{% endblock %}
+{% block page_title %}Leads{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><h1>Leads</h1><p>Track and convert opportunities</p></div>
+  <div class="page-hdr-right"><button class="btn btn-primary btn-sm" onclick="openModal('addLeadModal')">+ New Lead</button></div>
+</div>
+
+<div class="stat-row">
+  {% for label, val, color in [('Total Leads',stats.total,'var(--blue)'),('New',stats.new,'var(--amber)'),('Qualified',stats.qualified,'var(--green)'),('Converted',stats.converted,'var(--violet)')] %}
+  <div class="stat">
+    <div class="stat-val" style="color:{{ color }};font-size:28px;">{{ val }}</div>
+    <div class="stat-label" style="margin-top:6px;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <form method="GET" class="fbar">
+      <select class="fc2" name="status" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        {% for s in ['new','contacted','qualified','unqualified','converted'] %}
+        <option {% if s==status_filter %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      <select class="fc2" name="source" onchange="this.form.submit()">
+        <option value="">All Sources</option>
+        {% for s in ['website','referral','cold_call','email','social_media','event','other'] %}
+        <option {% if s==source_filter %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      {% if status_filter or source_filter %}<a href="/leads" class="btn btn-default btn-sm">Clear</a>{% endif %}
+    </form>
+    <span style="font-size:12px;color:var(--text3);">{{ leads|length }} records</span>
+  </div>
+  <div class="card-body np tbl-wrap">
+    <table>
+      <thead><tr><th>Company</th><th>Source</th><th>Status</th><th>Est. Value</th><th>Assigned To</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for l in leads %}
+      <tr>
+        <td>
+          <div class="td-co">
+            <div class="co-logo" style="background:{{co_color(l.lead_id) }};">{{ l.company_name[0] }}</div>
+            <span style="font-weight:500;">{{ l.company_name }}</span>
+          </div>
+        </td>
+        <td><span class="badge bgr" style="text-transform:capitalize;">{{ l.source.replace('_',' ') }}</span></td>
+        <td>
+          {% if l.status=='converted' %}<span class="badge bg">Converted</span>
+          {% elif l.status=='qualified' %}<span class="badge bb">Qualified</span>
+          {% elif l.status=='unqualified' %}<span class="badge br">Unqualified</span>
+          {% elif l.status=='contacted' %}<span class="badge bv">Contacted</span>
+          {% else %}<span class="badge by">New</span>{% endif %}
+        </td>
+        <td style="font-weight:600;">${{ "{:,.0f}".format(l.estimated_value|float if l.estimated_value else 0) }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="av">{{ (l.rep or 'U')[0] }}</div>
+            <span style="font-size:12px;">{{ l.rep or '—' }}</span>
+          </div>
+        </td>
+        <td>
+          {% if l.status != 'converted' %}
+          <button class="btn btn-success btn-xs" onclick="openConvert({{ l.lead_id }})">Convert →</button>
+          {% else %}<span class="badge bg" style="font-size:10px;">✓ Done</span>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text3);">No leads found</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addLeadModal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>New Lead</h2></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Customer *</label>
+        <select class="fc" id="l-cust">{% for c in customers %}<option value="{{ c.customer_id }}">{{ c.company_name }}</option>{% endfor %}</select>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Source</label>
+          <select class="fc" id="l-src">{% for s in ['website','referral','cold_call','email','social_media','event','other'] %}<option>{{ s }}</option>{% endfor %}</select>
+        </div>
+        <div class="fg"><label class="fl">Assign To</label>
+          <select class="fc" id="l-emp"><option value="">— None —</option>{% for e in employees %}<option value="{{ e.employee_id }}">{{ e.name }}</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Est. Value ($)</label><input class="fc" id="l-val" type="number" placeholder="0"></div>
+        <div class="fg"><label class="fl">Expected Close</label><input class="fc" id="l-date" type="date"></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="l-notes"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" onclick="onclick="document.getElementById('m-add-lead').classList.remove('open')"">Cancel</button>
+      <button class="btn btn-primary" onclick="addLead()">Create Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="convertModal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>Convert Lead to Deal</h2></div>
+    <div class="modal-body">
+      <input type="hidden" id="cv-lid">
+      <div class="fg"><label class="fl">Deal Amount ($) *</label><input class="fc" id="cv-amt" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">Closed By</label>
+        <select class="fc" id="cv-emp">{% for e in employees %}<option value="{{ e.employee_id }}">{{ e.name }}</option>{% endfor %}</select>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="cv-notes"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" onclick="closeModal('convertModal')">Cancel</button>
+      <button class="btn btn-success" onclick="convertLead()">Convert to Deal ✓</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function addLead() {
+  const res = await api('/api/leads/add', {
+    customer_id: document.getElementById('l-cust').value,
+    source: document.getElementById('l-src').value,
+    assigned_to: document.getElementById('l-emp').value || null,
+    estimated_value: document.getElementById('l-val').value || 0,
+    expected_close: document.getElementById('l-date').value || null,
+    notes: document.getElementById('l-notes').value,
+  });
+  if (res.ok) { toast('Lead created!'); setTimeout(() => location.reload(), 1200); }
+  else toast('Failed', 'error');
+}
+function openConvert(lid) { document.getElementById('cv-lid').value = lid; openModal('convertModal'); }
+async function convertLead() {
+  const amt = document.getElementById('cv-amt').value;
+  if (!amt) { toast('Amount required', 'error'); return; }
+  const res = await api('/api/leads/convert', {
+    lead_id: document.getElementById('cv-lid').value,
+    amount: amt, closed_by: document.getElementById('cv-emp').value,
+    notes: document.getElementById('cv-notes').value,
+  });
+  if (res.ok) { toast('Lead converted to deal!'); setTimeout(() => location.reload(), 1500); }
+  else toast(res.error || 'Failed', 'error');
+}
+</script>
+{% endblock %}

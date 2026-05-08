@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}— Deals{% endblock %}
+{% block page_title %}Deals{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><h1>Deals</h1><p>Sales performance & pipeline</p></div>
+  <div class="page-hdr-right"><button class="btn btn-primary btn-sm" onclick="openModal('m-add-deal')">+ New Deal</button></div>
+</div>
+
+{% set sc = {'proposal':'#0052cc','negotiation':'#ff8b00','closed_won':'#006644','closed_lost':'#de350b'} %}
+<div class="stat-row">
+  {% for p in pipeline %}
+  <div class="stat">
+    <div class="stat-top">
+      <div class="stat-label" style="text-transform:capitalize;">{{ p.stage.replace('_',' ') }}</div>
+      <div class="dot" style="background:{{ sc.get(p.stage,'#0052cc') }};"></div>
+    </div>
+    <div class="stat-val" style="color:{{ sc.get(p.stage,'#0052cc') }};font-size:22px;">{{ p.cnt }}</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:4px;">${{ "{:,.0f}".format(p.val|float) }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <form method="GET" style="display:flex;gap:8px;align-items:center;">
+      <select name="stage" class="btn btn-default" style="font-size:12px;" onchange="this.form.submit()">
+        <option value="">All Stages</option>
+        {% for s in ['proposal','negotiation','closed_won','closed_lost'] %}
+        <option {% if s==stage_filter %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      {% if stage_filter %}<a href="/deals" class="btn btn-default btn-sm">Clear</a>{% endif %}
+    </form>
+    <span style="font-size:12px;color:var(--text3);">{{ deals|length }} records</span>
+  </div>
+  <div class="card-body np tbl-wrap">
+    <table>
+      <thead><tr><th>Company</th><th>Amount</th><th>Stage</th><th>Closed By</th><th>Date</th><th>Update Stage</th></tr></thead>
+      <tbody>
+      {% set colors = ['#0052cc','#006644','#ff8b00','#5243aa','#00a3bf','#de350b','#6554c0','#00875a'] %}
+      {% for d in deals %}
+      <tr>
+        <td><div class="td-co">
+          <div class="co-logo" style="background:{{ colors[loop.index0 % colors|length] }};">{{ d.company_name[0] }}</div>
+          <span style="font-weight:500;">{{ d.company_name }}</span>
+        </div></td>
+        <td style="font-weight:700;">${{ "{:,.0f}".format(d.amount|float) }}</td>
+        <td>{% if d.stage=='closed_won' %}<span class="badge bg">Won</span>
+            {% elif d.stage=='closed_lost' %}<span class="badge br">Lost</span>
+            {% elif d.stage=='proposal' %}<span class="badge bb">Proposal</span>
+            {% else %}<span class="badge by">Negotiating</span>{% endif %}</td>
+        <td><div style="display:flex;align-items:center;gap:6px;"><div class="av">{{ (d.rep or 'U')[0] }}</div><span style="font-size:12px;">{{ d.rep or '—' }}</span></div></td>
+        <td style="font-size:12px;color:var(--text3);">{{ d.closed_date or '—' }}</td>
+        <td>
+          <select class="btn btn-default" style="font-size:11px;padding:3px 7px;" onchange="updateStage({{ d.deal_id }},this.value)">
+            {% for s in ['proposal','negotiation','closed_won','closed_lost'] %}
+            <option {% if s==d.stage %}selected{% endif %}>{{ s }}</option>{% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No deals found</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="m-add-deal">
+  <div class="modal">
+    <div class="modal-hdr"><h2>New Deal</h2></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Customer *</label><select class="fc" id="ad-cust">{% for c in customers %}<option value="{{ c.customer_id }}">{{ c.company_name }}</option>{% endfor %}</select></div>
+      <div class="form-row">
+        <div class="fg"><label class="fl">Amount ($) *</label><input class="fc" id="ad-amt" type="number" placeholder="0"></div>
+        <div class="fg"><label class="fl">Stage</label><select class="fc" id="ad-stage"><option value="proposal">Proposal</option><option value="negotiation">Negotiation</option><option value="closed_won">Closed Won</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="ad-notes"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-default" onclick="closeModal('m-add-deal')">Cancel</button><button class="btn btn-primary" onclick="addDeal()">Create Deal</button></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function updateStage(did,stage){
+  const res=await api('/api/deals/update-stage',{deal_id:did,stage});
+  if(res.ok)toast('Stage updated!');else toast('Failed','error');
+}
+async function addDeal(){
+  const amt=document.getElementById('ad-amt').value;
+  if(!amt){toast('Enter amount','error');return;}
+  const res=await api('/api/deals/add',{customer_id:document.getElementById('ad-cust').value,amount:amt,stage:document.getElementById('ad-stage').value,notes:document.getElementById('ad-notes').value});
+  if(res.ok){toast('Deal created!');setTimeout(()=>location.reload(),1200);}else toast('Failed','error');
+}
+</script>
+{% endblock %}

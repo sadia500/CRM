@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}— {{ info.company_name }}{% endblock %}
+{% block page_title %}{{ info.company_name }}{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/customers" class="btn btn-default btn-sm">← Back</a>
+    <div><h1>{{ info.company_name }}</h1><p>Customer 360° View</p></div>
+    {% if info.status=="active" %}<span class="badge bg">Active</span>{% elif info.status=="prospect" %}<span class="badge bb">Prospect</span>{% elif info.status=="inactive" %}<span class="badge bgr">Inactive</span>{% else %}<span class="badge br">Churned</span>{% endif %}
+  </div>
+  <div class="page-hdr-right">
+    <select class="fc" id="newStatus" style="width:140px;">{% for s in ["prospect","active","inactive","churned"] %}<option {% if s==info.status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+    <button class="btn btn-primary btn-sm" onclick="updateStatus({{ info.customer_id }})">Save</button>
+  </div>
+</div>
+<div class="g3" style="margin-bottom:16px;">
+  <div class="card" style="margin-bottom:0;"><div class="card-header"><h3>Company Info</h3></div>
+    <div class="card-body">
+      {% for l,v in [("Industry",info.industry),("Website",info.website),("Manager",info.manager)] %}
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f1f3;font-size:13px;"><span style="color:var(--text2);">{{ l }}</span><span style="font-weight:500;">{{ v or "—" }}</span></div>{% endfor %}
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;"><span style="color:var(--text2);">Revenue</span><span style="font-weight:700;color:var(--green);">${{ "{:,.0f}".format(info.annual_revenue|float if info.annual_revenue else 0) }}</span></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:0;"><div class="card-header"><h3>Quick Stats</h3></div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      {% for l,v,c in [("Leads",leads|length,"#0052cc"),("Deals",deals|length,"#006644"),("Tasks",tasks|length,"#5243aa"),("Interactions",interactions|length,"#ff8b00")] %}
+      <div style="background:var(--bg);border-radius:4px;padding:12px;text-align:center;"><div style="font-size:22px;font-weight:700;color:{{ c }};">{{ v }}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">{{ l }}</div></div>{% endfor %}
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:0;"><div class="card-header"><h3>Contacts</h3></div>
+    <div class="card-body" style="padding:8px 16px;">
+      {% for c in contacts %}<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #f0f1f3;"><div class="av">{{ c.first_name[0] }}</div><div><div style="font-size:13px;font-weight:500;">{{ c.first_name }} {{ c.last_name }}</div><div style="font-size:11px;color:var(--text3);">{{ c.position or "" }}</div></div></div>{% else %}<div style="color:var(--text3);font-size:13px;">No contacts</div>{% endfor %}
+    </div>
+  </div>
+</div>
+<div class="g2">
+  <div class="card" style="margin-bottom:0;"><div class="card-header"><h3>Leads</h3></div>
+    <div class="card-body np tbl-wrap"><table><thead><tr><th>Source</th><th>Status</th><th>Value</th><th>Close</th></tr></thead>
+    <tbody>{% for l in leads %}<tr><td><span class="badge bgr">{{ l.source }}</span></td><td>{% if l.status=="converted" %}<span class="badge bg">Converted</span>{% elif l.status=="qualified" %}<span class="badge bb">Qualified</span>{% else %}<span class="badge by">{{ l.status }}</span>{% endif %}</td><td style="font-weight:600;">${{ "{:,.0f}".format(l.estimated_value|float if l.estimated_value else 0) }}</td><td style="font-size:12px;color:var(--text3);">{{ l.expected_close or "—" }}</td></tr>{% else %}<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">No leads</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="card" style="margin-bottom:0;"><div class="card-header"><h3>Deals</h3></div>
+    <div class="card-body np tbl-wrap"><table><thead><tr><th>Amount</th><th>Stage</th><th>Date</th></tr></thead>
+    <tbody>{% for d in deals %}<tr><td style="font-weight:700;">${{ "{:,.0f}".format(d.amount|float) }}</td><td>{% if d.stage=="closed_won" %}<span class="badge bg">Won</span>{% elif d.stage=="closed_lost" %}<span class="badge br">Lost</span>{% else %}<span class="badge bb">{{ d.stage }}</span>{% endif %}</td><td style="font-size:12px;color:var(--text3);">{{ d.closed_date or "—" }}</td></tr>{% else %}<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text3);">No deals</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function updateStatus(cid){const s=document.getElementById("newStatus").value;const res=await api("/api/customers/update",{customer_id:cid,status:s});if(res.ok){toast("Status updated!");setTimeout(()=>location.reload(),1200);}else toast("Failed","error");}
+</script>
+{% endblock %}

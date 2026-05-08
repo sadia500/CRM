@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}— Customers{% endblock %}
+{% block page_title %}Customers{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><h1>Customers</h1><p>All company accounts</p></div>
+  <div class="page-hdr-right"><button class="btn btn-primary btn-sm" onclick="document.getElementById('m-add-cust').classList.add('open')">+ New Customer</button></div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <form method="GET" class="fbar">
+      <div class="fsearch"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input name="q" value="{{ search }}" placeholder="Search company..."></div>
+      <select name="status" class="btn btn-default" style="font-size:12px;" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        {% for s in ['prospect','active','inactive','churned'] %}<option {% if s==status_filter %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      {% if search or status_filter %}<a href="/customers" class="btn btn-default btn-sm">Clear</a>{% endif %}
+    </form>
+    <span style="font-size:12px;color:var(--text3);">{{ customers|length }} records</span>
+  </div>
+  <div class="card-body np tbl-wrap">
+    <table>
+      <thead><tr><th>Company</th><th>Industry</th><th>Status</th><th>Revenue</th><th>Account Manager</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% set colors = ['#0052cc','#006644','#ff8b00','#5243aa','#00a3bf','#de350b','#6554c0','#00875a'] %}
+      {% for c in customers %}
+      <tr>
+        <td><div class="td-co"><div class="co-logo" style="background:{{ colors[loop.index0 % 8] }};">{{ c.company_name[0] }}</div><div>
+          <a href="/customers/{{ c.customer_id }}" style="font-weight:500;color:var(--blue);text-decoration:none;">{{ c.company_name }}</a>
+          {% if c.website %}<div style="font-size:11px;color:var(--text3);">{{ c.website }}</div>{% endif %}
+        </div></div></td>
+        <td style="color:var(--text2);">{{ c.industry or '—' }}</td>
+        <td>{% if c.status=='active' %}<span class="badge bg">Active</span>{% elif c.status=='prospect' %}<span class="badge bb">Prospect</span>{% elif c.status=='inactive' %}<span class="badge bgr">Inactive</span>{% else %}<span class="badge br">Churned</span>{% endif %}</td>
+        <td style="font-weight:600;">${{ "{:,.0f}".format(c.annual_revenue|float if c.annual_revenue else 0) }}</td>
+        <td><div style="display:flex;align-items:center;gap:6px;"><div class="av">{{ (c.manager or 'U')[0] }}</div><span style="font-size:12px;">{{ c.manager or '—' }}</span></div></td>
+        <td><div style="display:flex;gap:5px;">
+          <a href="/customers/{{ c.customer_id }}" class="btn btn-default btn-xs">360°</a>
+          <button class="btn btn-danger btn-xs" onclick="delCust({{ c.customer_id }},'{{ c.company_name }}')">Del</button>
+        </div></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No customers found</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block modals %}
+<div class="modal-overlay" id="m-add-cust"><div class="modal">
+  <div class="modal-hdr"><h2>New Customer</h2></div>
+  <div class="modal-body">
+    <div class="fg"><label class="fl">Company Name *</label><input class="fc" id="ac-name" placeholder="e.g. TechNova Solutions"></div>
+    <div class="form-row"><div class="fg"><label class="fl">Industry</label><input class="fc" id="ac-ind"></div><div class="fg"><label class="fl">Website</label><input class="fc" id="ac-web"></div></div>
+    <div class="form-row"><div class="fg"><label class="fl">Annual Revenue ($)</label><input class="fc" id="ac-rev" type="number" placeholder="0"></div><div class="fg"><label class="fl">Status</label><select class="fc" id="ac-stat"><option value="prospect">Prospect</option><option value="active">Active</option></select></div></div>
+    <div class="fg"><label class="fl">Assign To</label><select class="fc" id="ac-emp"><option value="">— None —</option>{% for e in employees %}<option value="{{ e.employee_id }}">{{ e.name }}</option>{% endfor %}</select></div>
+ </div>
+  <div class="modal-foot">
+    <button class="btn btn-default" onclick="document.getElementById('m-add-cust').classList.remove('open')">Cancel</button>
+    <button class="btn btn-primary" onclick="addCust()">Create Customer</button>
+  </div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function addCust(){const name=document.getElementById('ac-name').value.trim();if(!name){toast('Name required','error');return;}const res=await api('/api/customers/add',{company_name:name,industry:document.getElementById('ac-ind').value,website:document.getElementById('ac-web').value,annual_revenue:document.getElementById('ac-rev').value||0,status:document.getElementById('ac-stat').value,assigned_employee:document.getElementById('ac-emp').value||null});if(res.ok){toast('Customer created!');setTimeout(()=>location.reload(),1200);}else toast('Failed','error');}
+async function delCust(id,name){if(!confirm(`Delete "${name}"?`))return;const res=await api('/api/customers/delete',{customer_id:id});if(res.ok){toast('Deleted');setTimeout(()=>location.reload(),1200);}else toast('Failed','error');}
+</script>
+{% endblock %}

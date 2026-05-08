@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}— Audit Log{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+{% block content %}
+<div class="page-hdr"><div><h1>Audit Log</h1><p>Auto-recorded by MySQL triggers — every INSERT, UPDATE, DELETE</p></div></div>
+
+<div class="stat-row">
+  {% for label,val,color in [('Total Logs',audit_stats.total,'#0052cc'),('Inserts',audit_stats.inserts,'#006644'),('Updates',audit_stats.updates,'#ff8b00'),('Deletes',audit_stats.deletes,'#de350b')] %}
+  <div class="stat"><div class="stat-val" style="color:{{ color }};font-size:28px;">{{ val }}</div><div class="stat-label" style="margin-top:6px;">{{ label }}</div></div>{% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <form method="GET" style="display:flex;gap:8px;align-items:center;">
+      <select name="table" class="btn btn-default" style="font-size:12px;" onchange="this.form.submit()">
+        <option value="">All Tables</option>
+        {% for t in ['customers','deals','leads','tasks'] %}<option {% if t==table_filter %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+      {% if table_filter %}<a href="/audit" class="btn btn-default btn-sm">Clear</a>{% endif %}
+    </form>
+    <span style="font-size:11px;color:var(--text3);">Showing last 60 entries · Triggers auto-fire on every change</span>
+  </div>
+  <div class="card-body np tbl-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Timestamp</th><th>Table</th><th>Action</th><th>Record #</th><th>Changed By</th></tr></thead>
+      <tbody>
+      {% for l in logs %}
+      <tr>
+        <td style="color:var(--text3);font-size:12px;">#{{ l.log_id }}</td>
+        <td style="font-size:11px;color:var(--text2);">{{ l.changed_at }}</td>
+        <td><span class="badge bgr">{{ l.table_name }}</span></td>
+        <td>{% if l.action=='INSERT' %}<span class="badge bg">INSERT</span>
+            {% elif l.action=='UPDATE' %}<span class="badge by">UPDATE</span>
+            {% else %}<span class="badge br">DELETE</span>{% endif %}</td>
+        <td style="color:var(--text3);font-size:12px;">#{{ l.record_id }}</td>
+        <td style="font-size:12px;color:var(--text2);">{{ l.changed_by or 'System/Trigger' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No audit entries</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

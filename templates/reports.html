@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}— Reports{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block content %}
+<div class="page-hdr"><div><h1>Reports & Analytics</h1><p>Business intelligence overview</p></div></div>
+
+<div class="g2">
+  <div class="card">
+    <div class="card-header"><div><h3>Sales Rep Performance</h3><p>Leads, conversions & revenue</p></div></div>
+    <div class="card-body np tbl-wrap">
+      <table>
+        <thead><tr><th>Rep</th><th>Leads</th><th>Conv.</th><th>Rate</th><th>Revenue</th></tr></thead>
+        <tbody>{% for r in pipeline_rep %}<tr>
+          <td><div style="display:flex;align-items:center;gap:8px;"><div class="av">{{ r.rep[0] }}</div><span style="font-weight:500;">{{ r.rep }}</span></div></td>
+          <td style="color:var(--text2);">{{ r.leads }}</td>
+          <td><span class="badge bg">{{ r.converted }}</span></td>
+          <td style="font-weight:600;color:var(--amber);">{{ r.conv_rate or 0 }}%</td>
+          <td style="font-weight:700;">${{ "{:,.0f}".format(r.revenue|float) }}</td>
+        </tr>{% else %}<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3);">No data</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div><h3>Lead Source Conversion</h3><p>Best performing channels</p></div></div>
+    <div class="card-body">
+      {% set max_rate = sources|map(attribute='rate')|map('float')|max if sources else 1 %}
+      {% for s in sources %}
+      <div style="margin-bottom:13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;">
+          <span style="text-transform:capitalize;">{{ s.source.replace('_',' ') }}</span>
+          <div style="display:flex;gap:8px;">
+            <span style="font-size:11px;color:var(--text3);">{{ s.converted }}/{{ s.total }}</span>
+            <span style="font-weight:700;color:var(--green);">{{ s.rate }}%</span>
+          </div>
+        </div>
+        <div class="pbar"><div class="pf" style="width:{{ [((s.rate|float/[max_rate|float,1]|max)*100)|round|int,100]|min }}%;background:var(--green2);"></div></div>
+      </div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="g2" style="margin-top:0;">
+  <div class="card">
+    <div class="card-header"><h3>Best-Selling Products</h3></div>
+    <div class="card-body np tbl-wrap">
+      <table><thead><tr><th>Product</th><th>Category</th><th>Units</th><th>Revenue</th></tr></thead>
+      <tbody>{% for p in products %}<tr>
+        <td style="font-weight:500;">{{ p.name }}</td>
+        <td><span class="badge bgr">{{ p.category }}</span></td>
+        <td style="color:var(--text2);">{{ p.units }}</td>
+        <td style="font-weight:700;">${{ "{:,.0f}".format(p.revenue|float) }}</td>
+      </tr>{% else %}<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">No data</td></tr>{% endfor %}</tbody></table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div><h3>Churn Risk Alert</h3><p>Active customers — no contact > 30 days</p></div></div>
+    <div class="card-body np tbl-wrap">
+      <table><thead><tr><th>Company</th><th>Last Contact</th><th>Days Idle</th></tr></thead>
+      <tbody>{% for c in churn %}<tr>
+        <td style="font-weight:500;">{{ c.company_name }}</td>
+        <td style="font-size:12px;color:var(--text3);">{{ c.last_contact or 'Never' }}</td>
+        <td><span class="badge {% if c.days_idle and c.days_idle > 60 %}br{% else %}by{% endif %}">{{ c.days_idle or '∞' }}d</span></td>
+      </tr>{% else %}<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--green);">✓ No churn risk detected</td></tr>{% endfor %}</tbody></table>
+    </div>
+  </div>
+</div>
+{% endblock %}

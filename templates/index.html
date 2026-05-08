@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}— Dashboard{% endblock %}
+{% block page_title %}Sales Dashboard{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><h1>Sales Dashboard</h1><p>CRM Database Management System — DBMS Project</p></div>
+  <div class="page-hdr-right">
+    <a href="/customers" class="btn btn-primary btn-sm">+ New Customer</a>
+  </div>
+</div>
+<div class="stat-row" style="grid-template-columns:repeat(4,1fr);">
+  <div class="stat">
+    <div class="stat-top"><div class="stat-label">Total Revenue</div><div class="stat-icon" style="background:#e8f0fe;"><svg width="14" height="14" fill="#0052cc" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div></div>
+    <div class="stat-val">${{ "{:,.0f}".format(stats.revenue|float) }}</div>
+    <div class="stat-change up">▲ closed won deals</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-label">Active Customers</div><div class="stat-icon" style="background:#e3fcef;"><svg width="14" height="14" fill="#006644" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div></div>
+    <div class="stat-val">{{ stats.customers }}</div>
+    <div class="stat-change up">▲ active accounts</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-label">Deals Won</div><div class="stat-icon" style="background:#fffae6;"><svg width="14" height="14" fill="#ff8b00" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg></div></div>
+    <div class="stat-val">{{ stats.deals }}</div>
+    <div class="stat-change up">▲ closed won</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-label">Open Leads</div><div class="stat-icon" style="background:#eae6ff;"><svg width="14" height="14" fill="#5243aa" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg></div></div>
+    <div class="stat-val">{{ stats.leads }}</div>
+    <div class="stat-change down">▼ need follow-up</div>
+  </div>
+</div>
+
+<div class="g-main">
+  <div>
+    <div class="card">
+      <div class="card-header"><div><h3>Revenue Overview</h3><p>Monthly closed deals — all time</p></div></div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          {% set max_val = [monthly|map(attribute='revenue')|map('float')|max if monthly else 1, 1]|max %}
+          <svg width="100%" height="160" viewBox="0 0 700 160" preserveAspectRatio="none">
+            <defs><linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0052cc" stop-opacity="0.15"/><stop offset="100%" stop-color="#0052cc" stop-opacity="0"/></linearGradient></defs>
+            {% set ns = namespace(pts=[]) %}
+            {% for m in monthly %}{% set ns.pts = ns.pts + [(10 + (loop.index0/11)*680)|round|string + ',' + (140-(m.revenue|float/max_val)*120)|round|string] %}{% endfor %}
+            <path d="M10,150 L{{ ns.pts|join(' L') }} L690,150 Z" fill="url(#gr)"/>
+            <polyline points="{{ ns.pts|join(' ') }}" fill="none" stroke="#0052cc" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            {% for m in monthly %}{% if m.revenue|float > 0 %}
+              {% set x = (10+(loop.index0/11)*680)|round|int %}{% set y = (140-(m.revenue|float/max_val)*120)|round|int %}
+              <circle cx="{{ x }}" cy="{{ y }}" r="4" fill="#0052cc" stroke="#fff" stroke-width="2"/>
+              <text x="{{ x }}" y="{{ y-10 }}" text-anchor="middle" font-size="10" fill="#5e6c84">${{ "{:.0f}".format(m.revenue|float/1000) }}k</text>
+            {% endif %}{% endfor %}
+          </svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0 10px;margin-top:6px;">
+{% for m in monthly %}<span style="font-size:10px;color:var(--text3);flex:1;text-align:center;">{{ m.mn[:3] }}{% if m.year is defined %} '{{ m.year }}{% endif %}</span>{% endfor %}
+</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><h3>Recent Deals</h3></div><a href="/deals" class="btn btn-default btn-xs">View all</a></div>
+      <div class="card-body np tbl-wrap">
+        <table><thead><tr><th>Company</th><th>Amount</th><th>Stage</th><th>Rep</th><th>Date</th></tr></thead>
+        <tbody>{% for d in recent_deals %}<tr>
+          <td><div class="td-co"><div class="co-logo" style="background:#0052cc;">{{ d.company_name[0] }}</div><span style="font-weight:500;">{{ d.company_name }}</span></div></td>
+          <td style="font-weight:700;">${{ "{:,.0f}".format(d.amount|float) }}</td>
+          <td>{% if d.stage=='closed_won' %}<span class="badge bg">Won</span>{% elif d.stage=='closed_lost' %}<span class="badge br">Lost</span>{% elif d.stage=='proposal' %}<span class="badge bb">Proposal</span>{% else %}<span class="badge by">Negotiating</span>{% endif %}</td>
+          <td><div style="display:flex;align-items:center;gap:6px;"><div class="av">{{ (d.rep or 'U')[0] }}</div><span style="font-size:12px;">{{ d.rep or '—' }}</span></div></td>
+          <td style="color:var(--text3);font-size:12px;">{{ d.closed_date or '—' }}</td>
+        </tr>{% else %}<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3);">No deals yet</td></tr>{% endfor %}</tbody></table>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <div class="card-header"><h3>Pipeline Summary</h3></div>
+      <div class="card-body">
+        {% set sc={'proposal':'#0052cc','negotiation':'#ff8b00','closed_won':'#006644','closed_lost':'#de350b'} %}
+        {% set total_v = pipeline|sum(attribute='val') %}
+        {% for p in pipeline %}
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:6px;"><div class="dot" style="background:{{ sc.get(p.stage,'#0052cc') }};"></div><span style="text-transform:capitalize;">{{ p.stage.replace('_',' ') }}</span><span style="color:var(--text3);">({{ p.cnt }})</span></div>
+            <span style="font-weight:600;">${{ "{:,.0f}".format(p.val|float) }}</span>
+          </div>
+          <div class="pbar"><div class="pf" style="width:{% if total_v > 0 %}{{ [((p.val|float/total_v|float)*100)|round|int,100]|min }}{% else %}0{% endif %}%;background:{{ sc.get(p.stage,'#0052cc') }};opacity:0.75;"></div></div>
+        </div>{% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Recent Activity</h3></div>
+      <div class="card-body">
+        {% for d in recent_deals[:4] %}
+<div class="act-item">
+  <div class="act-icon" style="background:#e8f0fe;">🤝</div>
+  <div>
+    <div class="act-text">Deal — <strong>{{ d.company_name }}</strong> ${{ "{:,.0f}".format(d.amount|float) }}</div>
+    <div class="act-time">{{ d.closed_date or 'Pending' }}</div>
+  </div>
+</div>
+{% endfor %}
+        {% for a in acts %}<div class="act-item"><div class="act-icon" style="background:{{ a.bg }};">{{ a.icon }}</div><div><div class="act-text">{{ a.text }}</div><div class="act-time">{{ a.time }}</div></div></div>{% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Top Performers</h3></div>
+      <div class="card-body">
+        {% set max_rev = top_reps[0].revenue|float if top_reps else 1 %}
+        {% for r in top_reps %}
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px;">
+          <div style="width:16px;font-size:11px;font-weight:700;color:var(--text3);text-align:center;">{{ loop.index }}</div>
+          <div class="av">{{ r.name[0] }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:12px;"><span style="font-weight:500;">{{ r.name }}</span><span style="font-weight:700;color:var(--green);">${{ "{:,.0f}".format(r.revenue|float) }}</span></div>
+            <div class="pbar"><div class="pf" style="width:{{ [((r.revenue|float/[max_rev,1]|max)*100)|round|int,100]|min }}%;background:#0052cc;"></div></div>
+          </div>
+          <span style="font-size:10px;color:var(--text3);">{{ r.deals }}d</span>
+        </div>{% else %}<div style="text-align:center;padding:24px;color:var(--text3);">No data</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
