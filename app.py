@@ -31,7 +31,11 @@ DB_CONFIG = {
 
 def get_db():
     try:
-        return mysql.connector.connect(**DB_CONFIG)
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute("SET SESSION sql_mode = ''")
+        cur.close()
+        return conn
     except Error as e:
         logging.exception("DB connection failed")
         return None
@@ -156,12 +160,15 @@ def index():
         ORDER BY FIELD(stage,'proposal','negotiation','closed_won','closed_lost')
     """))
     monthly = jrows(query("""
-        SELECT MONTH(closed_date) AS m, CONCAT(LEFT(MONTHNAME(closed_date),3),' ',YEAR(closed_date)) AS mn,
-               COALESCE(SUM(amount),0) AS revenue, COUNT(*) AS deals
-        FROM deals WHERE stage='closed_won' AND closed_date IS NOT NULL
-        GROUP BY YEAR(closed_date), MONTH(closed_date), MONTHNAME(closed_date)
-        ORDER BY YEAR(closed_date), MONTH(closed_date)
-    """))
+    SELECT MONTH(closed_date) AS m,
+           CONCAT(LEFT(MONTHNAME(closed_date),3),' ',YEAR(closed_date)) AS mn,
+           COALESCE(SUM(amount),0) AS revenue,
+           COUNT(*) AS deals
+    FROM deals
+    WHERE stage='closed_won' AND closed_date IS NOT NULL
+    GROUP BY YEAR(closed_date), MONTH(closed_date)
+    ORDER BY YEAR(closed_date), MONTH(closed_date)
+"""))
     return render_template("index.html", stats=stats, recent_deals=recent_deals,
                            top_reps=top_reps, pipeline=pipeline, monthly=monthly)
 
