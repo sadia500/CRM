@@ -1,12 +1,6 @@
 # 🗄️ CRM — Database Management System
 
-> A full-stack Customer Relationship Management system built with **Python Flask** + **MySQL** — featuring a modern dark-themed web dashboard, stored procedures, triggers, audit logging, and complete CRUD operations.
-
----
-
-## 🚀 Live Preview
-
-> Run locally → `http://127.0.0.1:5000`
+> A full-stack Customer Relationship Management system built with **Python Flask** + **MySQL** — featuring a light-themed web dashboard, stored procedures, triggers, audit logging, and complete CRUD operations.
 
 ---
 
@@ -52,6 +46,7 @@
 └── audit_log          — Auto-populated by triggers
 
 ### Stored Procedures
+
 | Procedure | Purpose |
 |---|---|
 | `sp_convert_lead_to_deal` | Atomic lead conversion with transaction rollback |
@@ -61,6 +56,7 @@
 | `sp_monthly_revenue` | Monthly revenue by year |
 
 ### Triggers
+
 | Trigger | Action |
 |---|---|
 | `trg_customers_audit_update` | Logs every customer update |
@@ -71,6 +67,7 @@
 | `trg_leads_audit_update` | Logs lead status changes |
 
 ### Views
+
 | View | Purpose |
 |---|---|
 | `vw_sales_performance` | Sales rep performance summary |
@@ -81,47 +78,84 @@
 ## ⚙️ Setup & Installation
 
 ### Prerequisites
-- Python 3.8+
-- MySQL 8.0
-- pip
+
+Before you start, make sure these are installed on your machine:
+
+- [Python 3.8+](https://www.python.org/downloads/)
+- [MySQL 8.0](https://dev.mysql.com/downloads/mysql/)
+- [MySQL Workbench](https://dev.mysql.com/downloads/workbench/) *(optional but recommended)*
+- pip *(comes with Python)*
+
+---
 
 ### Step 1 — Clone the repo
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/crm-dbms.git
-cd crm-dbms
+git clone https://github.com/sadia500/CRM.git
+cd CRM
 ```
 
+---
+
 ### Step 2 — Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
+This installs Flask, mysql-connector-python, and python-dotenv automatically.
+
+---
+
 ### Step 3 — Import the database
+
+**Option A — Terminal:**
 ```bash
 mysql -u root -p < crm_db.sql
 ```
-Or use MySQL Workbench → Server → Data Import → select `crm_db.sql`
 
-### Step 4 — Configure environment variables
-Create a `.env` file in the project root:
+**Option B — MySQL Workbench:**
+1. Open MySQL Workbench
+2. Connect to your local MySQL server
+3. Go to **Server → Data Import**
+4. Select **Import from Self-Contained File**
+5. Browse and select `crm_db.sql`
+6. Under **Default Target Schema** type `crm_db`
+7. Click **Start Import**
+
+---
+
+### Step 4 — Create your `.env` file
+
+Create a new file called `.env` in the root of the project folder (same level as `app.py`):
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=crm_db
 DB_USER=root
 DB_PASSWORD=your_mysql_password_here
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=any_random_string_here
 FLASK_DEBUG=False
 
-### Step 5 — Run
+> ⚠️ Replace `your_mysql_password_here` with your actual MySQL root password.  
+> The `.env` file is already in `.gitignore` — it will never be committed to GitHub.
+
+---
+
+### Step 5 — Run the app
+
 ```bash
 python app.py
 ```
 
-Open your browser → `http://127.0.0.1:5000`
+Open your browser and go to → `http://127.0.0.1:5000`
 
-### Step 6 — Login credentials (sample data)
+---
 
-| Employee | ID | Password | Role |
+### Step 6 — Login credentials
+
+Use any of these sample employee accounts to log in:
+
+| Name | Employee ID | Password | Role |
 |---|---|---|---|
 | Kamran Sheikh | 1 | admin123 | Admin |
 | Sana Rizvi | 2 | manager123 | Manager |
@@ -131,15 +165,17 @@ Open your browser → `http://127.0.0.1:5000`
 | Fatima Butt | 6 | fatima123 | Support |
 | Omer Naeem | 7 | omer123 | Manager |
 
+> On the login page enter the **Employee ID** (number) and the password above.
+
 ---
 
 ## 📁 Project Structure
-crm-dbms/
+CRM/
 ├── app.py                   # Flask application & all routes
 ├── crm_db.sql               # Complete MySQL schema + sample data
 ├── requirements.txt         # Python dependencies
 ├── .env                     # Your local credentials (never committed)
-├── .env.example             # Template — safe to commit
+├── .env.example             # Credentials template — safe to commit
 ├── .gitignore               # Git ignore rules
 ├── templates/
 │   ├── base.html            # Shared layout, sidebar, styles
@@ -172,7 +208,7 @@ crm-dbms/
 
 ## 🔐 Security Notes
 
-- All credentials stored in `.env` — never hardcoded
+- All credentials stored in `.env` — never hardcoded in source code
 - `.env` is listed in `.gitignore` and never committed to GitHub
 - Role-based access control — only Admin/Manager can delete records
 - Session-based authentication on all routes
@@ -182,17 +218,12 @@ crm-dbms/
 
 ## 🎓 Academic Context
 
-**University:** Bahria University, Karachi Campus
-**Department:** Computer Science
-**Course:** Database Management Systems
+**University:** Bahria University, Karachi Campus  
+**Department:** Computer Science  
+**Course:** Database Management Systems  
 **Semester:** 4th
 
 ---
 
-## 📄 License
 
-MIT License — free to use and modify.
-
----
-
-> Built with ❤️ using Python, Flask & MySQL
+> Built with using Python, Flask & MySQL
