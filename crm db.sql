@@ -1,5 +1,4 @@
 -- ============================================================
---  CRM DATABASE — Full MySQL Script
 --  Tables · Indexes · Sample Data · Stored Procedures · Triggers
 -- ============================================================
 
